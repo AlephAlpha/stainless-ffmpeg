@@ -130,6 +130,22 @@ impl VideoDecoder {
       })
     }
   }
+
+  pub fn decode_to_frame(&self, packet: &Packet, frame: &mut Frame) -> Result<(), String> {
+    if packet.get_stream_index() != self.stream_index {
+      return Err("bad stream".to_string());
+    }
+    unsafe {
+      av_frame_unref(frame.frame);
+
+      check_result!(avcodec_send_packet(self.codec_context, packet.packet));
+
+      check_result!(avcodec_receive_frame(self.codec_context, frame.frame));
+    }
+    frame.index = self.stream_index as usize;
+
+    Ok(())
+  }
 }
 
 impl Drop for VideoDecoder {
